@@ -8,7 +8,16 @@ app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'secret string')
 
 
+@app.after_request
+def after_request(response):
+    print('Response Status:', response.status)
+    print('Response Headers:', response.headers)
+    print('Response Body:', response.get_data(as_text=True))
+    return response
+
 # get name value from query string and cookie
+
+
 @app.route('/')
 @app.route('/hello')
 def hello():
@@ -22,12 +31,18 @@ def hello():
     else:
         response += '[Not Authenticated]'
     return response
+    # 打印session的内容
+    # print(session)
+    # return jsonify(dict(request))
 
 
 # redirect
 @app.route('/hi')
 def hi():
-    return redirect(url_for('hello'))
+    if session.get('logged_in'):
+        return 'Hello, Boss!'
+    else:
+        return redirect(url_for('hello'))
 
 
 # use int URL converter
@@ -37,6 +52,8 @@ def time_machine(year):
 
 
 # use any URL converter
+
+
 @app.route('/colors/<any(blue, white, red):color>')
 def three_colors(color):
     return '<p>Love is patient and kind. Love is not jealous or boastful or proud or rude.</p>'
@@ -179,3 +196,30 @@ def redirect_back(default='hello', **kwargs):
         if is_safe_url(target):
             return redirect(target)
     return redirect(url_for(default, **kwargs))
+
+
+@app.route('/print_request')
+def print_request():
+    request_data = {
+        'method': request.method,
+        'url': request.url,
+        'headers': dict(request.headers),
+        'args': request.args,
+        'form': request.form,
+        'json': request.get_json(silent=True),  # 使用 get_json 并设置 silent=True
+        'data': request.data.decode('utf-8')
+    }
+    return jsonify(request_data)
+
+
+@app.route('/test_response')
+def test_response():
+
+    response_data = {
+        'message': 'This is a custom response',
+        'status': 'success'
+    }
+    response = make_response(jsonify(response_data), 200)
+    return response
+    return response
+    # return jsonify(response_data)
